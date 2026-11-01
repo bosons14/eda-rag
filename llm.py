@@ -50,8 +50,9 @@ def generate(prompt, system=SYSTEM, max_tokens=700, provider=None, model=None, t
     if provider == "none":
         return "(LLM_PROVIDER=none - generation skipped)"
     if provider == "anthropic":
+        # anthropic SDK 2.x removed sampling params (temperature/top_p/top_k)
         r = _client(provider).messages.create(
-            model=model, max_tokens=max_tokens, system=system, temperature=temperature,
+            model=model, max_tokens=max_tokens, system=system,
             messages=[{"role": "user", "content": prompt}])
         return "".join(b.text for b in r.content if b.type == "text")
     if provider == "openai":
