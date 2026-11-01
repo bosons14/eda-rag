@@ -43,7 +43,10 @@ def norm(s):
 
 def synthetic(n, seed):
     chunks = [json.loads(l) for l in open(CHUNKS / "chunks_struct.jsonl")]
-    chunks = [c for c in chunks if c["source"] == "docs" and len(c["text"].split()) > 60]
+    # skip build/contributor/developer guides: we want questions about USING the tools
+    dev = re.compile(r"(build|contrib|develop|bazel|docker|install|ci\.md)", re.I)
+    chunks = [c for c in chunks if c["source"] == "docs" and len(c["text"].split()) > 60
+              and not dev.search(c["path"]) and not dev.search(c["section"])]
     random.Random(seed).shuffle(chunks)
     # stratify across tools so one big manual doesn't dominate
     by_tool = {}
@@ -65,9 +68,13 @@ def synthetic(n, seed):
                     provider=JUDGE_PROVIDER, model=JUDGE_MODEL))
             except Exception as e:
                 print("  skip (bad reply):", e); continue
-            if j.get("skip") or norm(j.get("evidence", "")) not in norm(c["text"]):
+            q = str(j.get("question") or "").strip()
+            ev = str(j.get("evidence") or "").strip()
+            if j.get("skip") or len(q) < 10 or len(ev.split()) < 2:
+                continue   # skipped, or reply missing fields (an empty evidence would match everything)
+            if norm(ev) not in norm(c["text"]):
                 continue   # evidence must be verbatim, or the item is useless
-            item = {"id": f"syn-{made}", "question": j["question"], "evidence": j["evidence"],
+            item = {"id": f"syn-{made}", "question": q, "evidence": ev,
                     "answer": j.get("answer", ""), "tool": c["tool"], "gold_path": c["path"],
                     "origin": "synthetic"}
             f.write(json.dumps(item) + "\n"); made += 1
@@ -99,7 +106,9 @@ def check():
         if not p.exists():
             continue
         items = [json.loads(l) for l in open(p)]
-        bad = [i["id"] for i in items if not any(norm(i["evidence"]) in t for t in corpus)]
+        bad = [i["id"] for i in items
+               if len(norm(i.get("evidence", "")).split()) < 1
+               or not any(norm(i["evidence"]) in t for t in corpus)]
         print(f"{name}: {len(items)} items, {len(bad)} with evidence not found {bad[:10]}")
 
 

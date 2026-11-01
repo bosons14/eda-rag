@@ -49,7 +49,9 @@ def load_items(limit):
 
 
 def first_hit(hits, evidence):
-    ev = norm(evidence)
+    ev = norm(evidence or "")
+    if not ev:              # empty evidence would "match" every chunk
+        return None
     for r, c in enumerate(hits, 1):
         if ev in norm(c["text"]):
             return r
