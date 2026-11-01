@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+data/raw/
+data/chunks/
+data/index/
+data/eval/results-*.json
+data/eval/synthetic.jsonl

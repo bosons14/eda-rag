@@ -1,0 +1,11 @@
+rank_bm25>=0.2.2
+faiss-cpu>=1.8
+sentence-transformers>=3.0
+requests
+numpy
+# pick the LLM client(s) you use:
+anthropic
+openai
+# only for LLM_PROVIDER=hf (local small models):
+transformers
+accelerate
